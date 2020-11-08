@@ -44,9 +44,6 @@ def build_minutes_list():
         minutes_array.append( (seed_timestamp + timedelta(minutes = minute)).strftime("%H:%M:%S"))
     return minutes_array
 
-# array of days!!!!!!!!!!!!!!!!
-# dates_list = build_date_list()
-
 # 直近7日間のデータを日別で取得し、辞書を返却する(Activity系)
 def build_days_metrics_dict(authed_client,dates_list):
     days_result_dict = {}
@@ -77,8 +74,16 @@ def build_intraday_metrics_dict(authed_client,minutes_list):
     # intra_day APIで、実行日の①歩数 ②心拍数 ③消費カロリー を取得する
     resources_list = ['steps','calories']
 
-    per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")
-    per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")    
+    per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now()).date()), detail_level='1min', start_time="0:00", end_time="23:59")
+    # per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")
+    # print("date",(datetime.now()).date())
+    print("per_minutes_steps",per_minutes_steps)
+
+    per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now()).date()), detail_level='1min', start_time="0:00", end_time="23:59")    
+    # per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")  
+    print("per_minutes_calories",per_minutes_calories)  
+
+
 
     # リクエストから、分単位のデータを取得し、辞書に整形する
     for minute in minutes_list:
@@ -111,7 +116,7 @@ def convert_dict_to_dataframe(dic,column_names,index_name):
     print("converted_df",converted_df)
     return converted_df   
 
-def get_fitbit_data():
+def fitbit_data_byDayAndMinutes():
     #Fitbit ID等設定
     CLIENT_ID     = "22C2HT"
     CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
@@ -167,8 +172,7 @@ def get_fitbit_data():
     export_df_to_bq(minute_result_df,project_id,dataset_name,minute_table_name) 
 
 # Fitbitから取得したデータは、dictionary型で返却される。
-get_fitbit_data()
-
+fitbit_data_byDayAndMinutes()
 # def get_activities():
 #     activities_dict={}
 #     for DATE in dates_list:
@@ -188,6 +192,6 @@ get_fitbit_data()
 
 
 # This code is necessary to invoke function in cloud function 
-# def get_new_activities(request):
-#     get_activities()
+# def get_fitbit_data_byDayAndMinutes(request):
+#     fitbit_data_byDayAndMinutes()
 #     return f"OK"
