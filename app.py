@@ -34,7 +34,18 @@ def build_date_list():
         date_array.append(str(date))
     return date_array
 
-dates_list = build_date_list()
+# 実行日の分リストを作成する
+def build_minutes_list():
+    minutes_array = []
+    # タイムゾーンの生成
+    JST = timezone(timedelta(hours=+9),'JST')    
+    seed_timestamp = datetime.now(JST).replace(hour=0,minute=0,second=0,microsecond=0)         
+    for minute in range(1,1440):
+        minutes_array.append( (seed_timestamp + timedelta(minutes = minute)).strftime("%H:%M:%S"))
+    return minutes_array
+
+# array of days!!!!!!!!!!!!!!!!
+# dates_list = build_date_list()
 
 # 直近7日間のデータを日別で取得し、辞書を返却する(Activity系)
 def build_days_metrics_dict(authed_client,dates_list):
@@ -58,8 +69,35 @@ def build_days_metrics_dict(authed_client,dates_list):
         days_result_dict[date] = singleday_activity_metrics
     return days_result_dict
 
-# days_result_dict =  build_days_metrics_dict(authed_client,dates_list)
-# print("days_result_dict",days_result_dict)
+# 実行日のデータを分単位で取得し、辞書を返却する
+def build_intraday_metrics_dict(authed_client,minutes_list):
+    intraday_minutes_result_dict = {}
+    JST = timezone(timedelta(hours=+9),'JST')    
+
+    # intra_day APIで、実行日の①歩数 ②心拍数 ③消費カロリー を取得する
+    resources_list = ['steps','calories']
+
+    per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")
+    per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now(JST) - timedelta(days = 25)).date()), detail_level='1min', start_time="0:00", end_time="23:59")    
+
+    # リクエストから、分単位のデータを取得し、辞書に整形する
+    for minute in minutes_list:
+        per_minute_result = []  
+
+        #分刻みのStepsを配列に追加
+        steps_values = [x['value'] for x in per_minutes_steps['activities-steps-intraday']['dataset'] if x['time'] == minute]
+        step_value = steps_values[0] if len(steps_values) else ''
+        per_minute_result.append(step_value)
+
+        #分刻みのCaloriesを配列に追加
+        calories_values = [x['value'] for x in per_minutes_calories['activities-calories-intraday']['dataset'] if x['time'] == minute]
+        calories_value = calories_values[0] if len(calories_values) else ''
+        per_minute_result.append(calories_value)        
+
+        intraday_minutes_result_dict[minute] = per_minute_result
+
+    return intraday_minutes_result_dict
+
 
 # DataFrameをBigQueryの任意のプロジェクト / 保存先にエクスポートする
 def export_df_to_bq(df,project_id,dataset_name,table_name):
@@ -100,13 +138,14 @@ def get_fitbit_data():
 
      # 時系列リストの生成
     dates_list = build_date_list()
+    minutes_list = build_minutes_list()  
 
     # 日別データの取得 -> DataFrameに変換
     ## データの取得
     days_result_dict = build_days_metrics_dict(authed_client,dates_list)
     # print('days_result_dict',days_result_dict)
 
-     ## DataFrameに変換
+     ## DataFrameに変換/day
     days_clumns_name = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']    
     days_result_df = convert_dict_to_dataframe(days_result_dict,days_clumns_name,'date')
     print('--------日別の数値--------')
@@ -115,6 +154,17 @@ def get_fitbit_data():
     # BigQueryに書き込み
     days_table_name = 'days_metrics'
     export_df_to_bq(days_result_df,project_id,dataset_name,days_table_name)    
+
+    #DataFrameに変換/minutes 
+    minute_result_dict = build_intraday_metrics_dict(authed_client,minutes_list)
+    minute_clumns_name = ['steps','calories']   
+    minute_result_df = convert_dict_to_dataframe(minute_result_dict,minute_clumns_name,'minute')    
+    print('--------時間別の数値--------')
+    print(minute_result_df)
+    print('------------------------')
+    # BigQueryに書き込み    
+    minute_table_name = 'minutes_metrics'
+    export_df_to_bq(minute_result_df,project_id,dataset_name,minute_table_name) 
 
 # Fitbitから取得したデータは、dictionary型で返却される。
 get_fitbit_data()
@@ -135,7 +185,6 @@ get_fitbit_data()
     # return activities_dict
 
 # get_activities()
-
 
 
 # This code is necessary to invoke function in cloud function 
