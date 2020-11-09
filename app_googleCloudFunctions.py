@@ -6,22 +6,11 @@ import pandas
 import json
 
 #Fitbit ID等設定
-CLIENT_ID     = "22C2HT"
-CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
-TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
-
-tokens = open(TOKEN_FILE).read()
-token_dict = literal_eval(tokens)
-ACCESS_TOKEN = token_dict['access_token']
-REFRESH_TOKEN = token_dict['refresh_token']
-
-def updateToken(token):
-    f = open(TOKEN_FILE, 'w')
-    f.write(str(token))
-    f.close()
-    return
-
-authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
+def build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN):
+    # ID等の設定
+    authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET
+                             ,access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN)
+    return authed_client
 
 # 直近7日間の日付リストを作成する
 def build_date_list():
@@ -68,9 +57,6 @@ def build_intraday_metrics_dict(authed_client,minutes_list):
     intraday_minutes_result_dict = {}
 
     per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now()).date()), detail_level='1min', start_time="00:00", end_time="23:59")
-    print("date",(datetime.now()).date())
-    print("per_minutes_steps",per_minutes_steps["activities-steps-intraday"])
-
 
     per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now()).date()), detail_level='1min', start_time="00:00", end_time="23:59")    
 
@@ -80,7 +66,6 @@ def build_intraday_metrics_dict(authed_client,minutes_list):
 
         #分刻みのStepsを配列に追加
         steps_values = [x['value'] for x in per_minutes_steps['activities-steps-intraday']['dataset'] if x['time'] == minute]
-
         step_value = steps_values[0] if len(steps_values) else ''
         per_minute_result.append(step_value)
 
@@ -108,25 +93,15 @@ def fitbit_data_byDayAndMinutes():
     #Fitbit ID等設定
     CLIENT_ID     = "22C2HT"
     CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
-    TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
-
-    tokens = open(TOKEN_FILE).read()
-    token_dict = literal_eval(tokens)
-    ACCESS_TOKEN = token_dict['access_token']
-    REFRESH_TOKEN = token_dict['refresh_token']
-
-    def updateToken(token):
-        f = open(TOKEN_FILE, 'w')
-        f.write(str(token))
-        f.close()
-        return
+    ACCESS_TOKEN =  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMkMySFQiLCJzdWIiOiI4WDRQUlMiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJhY3QgcnNldCBybG9jIHJ3ZWkgcmhyIHJwcm8gcm51dCByc2xlIiwiZXhwIjoxNjA0OTEyODEyLCJpYXQiOjE2MDQ4ODQwMTJ9.SHqn4mzgvHKdWDiRXpkyReDkrKBx8c5aPG2YpADOndg"
+    REFRESH_TOKEN =  "fda7902458179d9fc776592aaaff73caffc43ab1bd156b34ae3924c0c1f30928"
     
     ## BigQuery関連(★★自身の情報に変更します★★)
     project_id = "bigminiconf-nov2020"
     dataset_name = "1234_5"
 
     # 認証済みクライアントの作成
-    authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
+    authed_client = build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN)
 
      # 時系列リストの生成
     dates_list = build_date_list()
@@ -135,6 +110,7 @@ def fitbit_data_byDayAndMinutes():
     # 日別データの取得 -> DataFrameに変換
     ## データの取得
     days_result_dict = build_days_metrics_dict(authed_client,dates_list)
+    # print('days_result_dict',days_result_dict)
 
      ## DataFrameに変換/day
     days_clumns_name = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']    
@@ -157,10 +133,6 @@ def fitbit_data_byDayAndMinutes():
     minute_table_name = 'minutes_metrics'
     export_df_to_bq(minute_result_df,project_id,dataset_name,minute_table_name) 
 
-# Fitbitから取得したデータは、dictionary型で返却される。
-fitbit_data_byDayAndMinutes()
-
-# This code is necessary to invoke function in cloud function (HTTP)
-# def get_fitbit_data_byDayAndMinutes(request):
-#     fitbit_data_byDayAndMinutes()
-#     return f"OK"
+# This code is necessary to invoke function in cloud function 
+def get_fitbit_data_byDayAndMinutes(event,context):
+    fitbit_data_byDayAndMinutes()
