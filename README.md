@@ -10,7 +10,7 @@ With aging of population , more than one in four people is over 65 years old in 
  
 Monita2 is contacto to your fitbit API. Weekly summary shows the data of your steps and lightly/very activity in recent week. Steps/calories out by minutes is updated your data every 1 minute. Monita2 is updated automatically every 1 hour. 
   
-# Tech stacks 
+# Tech stack
 FitbitApi
 Python3
 Google Cloud Platform : Cloud functions, BigQuery, Cloud Scheduler, pub/Sub
@@ -21,4 +21,4 @@ Google data studio portal
 * Miku Sano
 * svartkatt39@gmail.com
  
-### Thank you for reading!! 
+### Thank you for reading!! 🌈
