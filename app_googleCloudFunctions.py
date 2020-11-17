@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
+# fitbit autholization
 import fitbit
 from ast import literal_eval
 from datetime import datetime, timedelta, timezone
 import pandas 
 import json
+# miku 
+import tempfile
 
-#Fitbit ID等設定
-def build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN):
-    # ID等の設定
-    authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET
-                             ,access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN)
-    return authed_client
 
 # 直近7日間の日付リストを作成する
 def build_date_list():
@@ -42,6 +39,7 @@ def build_days_metrics_dict(authed_client,dates_list):
         # 該当日のActivity系の指標を取得
         activity_metrics = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']
         activity_response = authed_client.activities(date=date)
+        # print("activity_response",activity_response)
         for metrics_name in activity_metrics:
             try:
                 singleday_activity_metrics.append(activity_response['summary'][metrics_name])
@@ -49,16 +47,22 @@ def build_days_metrics_dict(authed_client,dates_list):
                 singleday_activity_metrics.append(0) 
 
         # 該当日の指標を辞書に格納
+        # print("singleday_activity_metrics",singleday_activity_metrics)
         days_result_dict[date] = singleday_activity_metrics
     return days_result_dict
 
 # 実行日のデータを分単位で取得し、辞書を返却する
 def build_intraday_metrics_dict(authed_client,minutes_list):
     intraday_minutes_result_dict = {}
+    # JST = timezone(timedelta(hours=+9),'JST')    
+
+    # intra_day APIで、実行日の①歩数 ②心拍数 ③消費カロリー を取得する
+    # resources_list = ['steps','calories']
 
     per_minutes_steps = authed_client.intraday_time_series('activities/steps', base_date=str((datetime.now()).date()), detail_level='1min', start_time="00:00", end_time="23:59")
 
     per_minutes_calories = authed_client.intraday_time_series('activities/calories', base_date=str((datetime.now()).date()), detail_level='1min', start_time="00:00", end_time="23:59")    
+
 
     # リクエストから、分単位のデータを取得し、辞書に整形する
     for minute in minutes_list:
@@ -75,6 +79,7 @@ def build_intraday_metrics_dict(authed_client,minutes_list):
         per_minute_result.append(calories_value)        
 
         intraday_minutes_result_dict[minute] = per_minute_result
+        # print("intraday_minutes_result_dict",intraday_minutes_result_dict)
 
     return intraday_minutes_result_dict
 
@@ -93,15 +98,36 @@ def fitbit_data_byDayAndMinutes():
     #Fitbit ID等設定
     CLIENT_ID     = "22C2HT"
     CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
-    ACCESS_TOKEN =  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMkMySFQiLCJzdWIiOiI4WDRQUlMiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJhY3QgcnNldCBybG9jIHJ3ZWkgcmhyIHJwcm8gcm51dCByc2xlIiwiZXhwIjoxNjA0OTEyODEyLCJpYXQiOjE2MDQ4ODQwMTJ9.SHqn4mzgvHKdWDiRXpkyReDkrKBx8c5aPG2YpADOndg"
-    REFRESH_TOKEN =  "fda7902458179d9fc776592aaaff73caffc43ab1bd156b34ae3924c0c1f30928"
+    TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
+
+    tokens = open(TOKEN_FILE).read()
+    token_dict = literal_eval(tokens)
+    ACCESS_TOKEN = token_dict['access_token']
+    REFRESH_TOKEN = token_dict['refresh_token']
+
+    def updateToken(token):
+        # miku
+        temp = tempfile.TemporaryDirectory()
+        write_path = temp.name + '/' + TOKEN_FILE
+        f = open(write_path, 'w')
+        f.write(str(token))
+        f.close()
+        temp.cleanup()
+        return
+
+    # def updateToken(token):
+    #     f = open(TOKEN_FILE, 'w')
+    #     f.write(str(token))
+    #     f.close()
+    #     return
     
     ## BigQuery関連(★★自身の情報に変更します★★)
     project_id = "bigminiconf-nov2020"
     dataset_name = "1234_5"
 
     # 認証済みクライアントの作成
-    authed_client = build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN)
+    authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
+    # authed_client = build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN)
 
      # 時系列リストの生成
     dates_list = build_date_list()
@@ -133,6 +159,8 @@ def fitbit_data_byDayAndMinutes():
     minute_table_name = 'minutes_metrics'
     export_df_to_bq(minute_result_df,project_id,dataset_name,minute_table_name) 
 
+
 # This code is necessary to invoke function in cloud function 
 def get_fitbit_data_byDayAndMinutes(event,context):
     fitbit_data_byDayAndMinutes()
+    # return f"OK"

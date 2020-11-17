@@ -6,22 +6,22 @@ import pandas
 import json
 
 #Fitbit ID等設定
-CLIENT_ID     = "22C2HT"
-CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
-TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
+# CLIENT_ID     = "22C2HT"
+# CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
+# TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
 
-tokens = open(TOKEN_FILE).read()
-token_dict = literal_eval(tokens)
-ACCESS_TOKEN = token_dict['access_token']
-REFRESH_TOKEN = token_dict['refresh_token']
+# tokens = open(TOKEN_FILE).read()
+# token_dict = literal_eval(tokens)
+# ACCESS_TOKEN = token_dict['access_token']
+# REFRESH_TOKEN = token_dict['refresh_token']
 
-def updateToken(token):
-    f = open(TOKEN_FILE, 'w')
-    f.write(str(token))
-    f.close()
-    return
+# def updateToken(token):
+#     f = open(TOKEN_FILE, 'w')
+#     f.write(str(token))
+#     f.close()
+#     return
 
-authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
+# authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
 
 # 直近7日間の日付リストを作成する
 def build_date_list():
