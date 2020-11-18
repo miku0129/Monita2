@@ -1,3 +1,5 @@
+#cmd / set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\svart\OneDrive\ドキュメント\BigMiniConf\fitbit\myFitbit_2\bigminiconf-nov2020-f59c478cf5b4.json
+
 # -*- coding: utf-8 -*-
 # fitbit autholization
 import fitbit
@@ -5,9 +7,41 @@ from ast import literal_eval
 from datetime import datetime, timedelta, timezone
 import pandas 
 import json
-# miku 
-import tempfile
 
+#googole cloud storage---------------------------- 
+import google.cloud.storage as storage
+from os import environ
+from pprint import pprint 
+
+def test_bucket():
+    #print the bucket 
+    print("GOOGLE_APPLICATION_CREDENTIALS={}".format(environ.get("GOOGLE_APPLICATION_CREDENTIALS")))
+    client = storage.Client()
+
+    bucket_name = "fitbit_data_bydayandminutes"
+    blobs = client.list_blobs(bucket_name)
+    for blob in blobs:
+        print('-------->')
+        pprint(vars(blob))
+# test_bucket()
+
+BUCKET_name = "fitbit_data_bydayandminutes"
+SOURCE_blob_name = "token_gcp.txt"
+DESTIANATION_file_name = "token2.txt"
+
+def download_blob(bucket_name, source_blob_name, destination_file_name):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_filename(destination_file_name)
+
+    print(
+        "Blob {} downloaded to {}.".format(
+            source_blob_name, destination_file_name
+        )
+    )
+download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
+#----------------------------googole cloud storage
 
 # 直近7日間の日付リストを作成する
 def build_date_list():
@@ -105,21 +139,21 @@ def fitbit_data_byDayAndMinutes():
     ACCESS_TOKEN = token_dict['access_token']
     REFRESH_TOKEN = token_dict['refresh_token']
 
+    # def updateToken(token):
+        # using temp is failed 
+        # temp = tempfile.TemporaryDirectory()
+        # write_path = temp.name + '/' + TOKEN_FILE
+        # f = open(write_path, 'w')
+        # f.write(str(token))
+        # f.close()
+        # temp.cleanup()
+        # return
+
     def updateToken(token):
-        # miku
-        temp = tempfile.TemporaryDirectory()
-        write_path = temp.name + '/' + TOKEN_FILE
-        f = open(write_path, 'w')
+        f = open(TOKEN_FILE, 'w')
         f.write(str(token))
         f.close()
-        temp.cleanup()
         return
-
-    # def updateToken(token):
-    #     f = open(TOKEN_FILE, 'w')
-    #     f.write(str(token))
-    #     f.close()
-    #     return
     
     ## BigQuery関連(★★自身の情報に変更します★★)
     project_id = "bigminiconf-nov2020"
@@ -161,6 +195,8 @@ def fitbit_data_byDayAndMinutes():
 
 
 # This code is necessary to invoke function in cloud function 
-def get_fitbit_data_byDayAndMinutes(event,context):
-    fitbit_data_byDayAndMinutes()
-    # return f"OK"
+# def get_fitbit_data_byDayAndMinutes(event,context):
+#     fitbit_data_byDayAndMinutes()
+
+fitbit_data_byDayAndMinutes()
+

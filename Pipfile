@@ -9,6 +9,8 @@ verify_ssl = true
 pandas = "*"
 fitbit = "*"
 pandas-gbq = "*"
+google-cloud-storage = "*"
+oauth2client = "*"
 
 [requires]
 python_version = "3.8"
