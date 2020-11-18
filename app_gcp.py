@@ -1,4 +1,6 @@
-#【環境変数をセットする/cmd】 set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\svart\OneDrive\ドキュメント\BigMiniConf\fitbit\myFitbit_2\bigminiconf-nov2020-f59c478cf5b4.json
+#【環境変数をセットする/cmd】 
+# set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\svart\OneDrive\ドキュメント\BigMiniConf\fitbit\myFitbit_2\bigminiconf-nov2020-f59c478cf5b4.json
+# set TOKEN_TXT={'access_token': 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMkMySFQiLCJzdWIiOiI4WDRQUlMiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJ3aHIgd3BybyB3bnV0IHdzbGUgd3dlaSB3c29jIHdhY3Qgd3NldCB3bG9jIiwiZXhwIjoxNjA1Njg0ODQyLCJpYXQiOjE2MDU2NTYwNDJ9.6duZTOWEPWDq2qS7VejKAakJhGvRNopTN9zJTP9u5Dg', 'expires_in': 28800, 'refresh_token': 'c93de67e571333f53716298ce67950a0078e924dba733ce84b28795daa0afa90', 'scope': ['social', 'profile', 'weight', 'sleep', 'activity', 'nutrition', 'settings', 'location', 'heartrate'], 'token_type': 'Bearer', 'user_id': '8X4PRS', 'expires_at': 1605684842.9923487}
 
 # -*- coding: utf-8 -*-
 import fitbit
@@ -7,39 +9,48 @@ from datetime import datetime, timedelta, timezone
 import pandas #Big Query 
 import json
 import tempfile #一時ファイルやディレクトリの作成
+from os import environ #環境変数
+
 
 #googole cloud storage---------------------------->
-import google.cloud.storage as storage
-from os import environ
-from pprint import pprint 
+# import google.cloud.storage as storage
+# from os import environ
+# from pprint import pprint 
 
-def test_bucket():
-    #print the bucket 
-    print("GOOGLE_APPLICATION_CREDENTIALS={}".format(environ.get("GOOGLE_APPLICATION_CREDENTIALS")))
-    client = storage.Client()
+# def test_bucket():
+#     #print the bucket 
+#     print("GOOGLE_APPLICATION_CREDENTIALS={}".format(environ.get("GOOGLE_APPLICATION_CREDENTIALS")))
+#     client = storage.Client()
+#     bucket_name = "fitbit_data_bydayandminutes"
+#     blobs = client.list_blobs(bucket_name)
+#     for blob in blobs:
+#         print('-------->')
+#         pprint(vars(blob))
+# # test_bucket()
 
-    bucket_name = "fitbit_data_bydayandminutes"
-    blobs = client.list_blobs(bucket_name)
-    for blob in blobs:
-        print('-------->')
-        pprint(vars(blob))
-# test_bucket()
+# BUCKET_name = "fitbit_data_bydayandminutes"
+# SOURCE_blob_name = "token_gcp.txt"
+# # DESTIANATION_file_name = "token2.txt"
+# DESTIANATION_file_name = environ.get("GET_TOKEN")
+# print("GET_TOKEN={}".format(environ.get("GET_TOKEN")))
 
-BUCKET_name = "fitbit_data_bydayandminutes"
-SOURCE_blob_name = "token_gcp.txt"
-DESTIANATION_file_name = "token.txt"
 
-def download_blob(bucket_name, source_blob_name, destination_file_name):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(destination_file_name)
 
-    print(
-        "Blob {} downloaded to {}.".format(
-            source_blob_name, destination_file_name
-        )
-    )
+# def download_blob(bucket_name, source_blob_name, destination_file_name):
+#     storage_client = storage.Client()
+#     bucket = storage_client.bucket(bucket_name)
+#     blob = bucket.blob(source_blob_name)
+
+#     temp = tempfile.TemporaryDirectory()
+#     write_path = temp.name + 'destination_file_name'
+
+#     blob.download_to_filename(write_path)
+
+#     print(
+#         "Blob {} downloaded to {}.".format(
+#             source_blob_name, destination_file_name
+#         )
+#     )
 # download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
 #<----------------------------googole cloud storage
 
@@ -129,26 +140,35 @@ def fitbit_data_byDayAndMinutes():
     #Fitbit ID等設定
     CLIENT_ID     = "22C2HT"
     CLIENT_SECRET = "cd36c066c7dd5191eadf89ff466c5ea5" 
-    TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
+    # TOKEN_FILE    = "token.txt" #同一ディレクトリに.txtを作る
+    tokens = environ.get("TOKEN_TXT") #環境変数にセットしたtoken.txtを取得
 
-    tokens = open(TOKEN_FILE).read()
+    # tokens = open(TOKEN_FILE).read()
+    # token_dict = literal_eval(tokens)
+    # ACCESS_TOKEN = token_dict['access_token']
+    # REFRESH_TOKEN = token_dict['refresh_token']
+
     token_dict = literal_eval(tokens)
     ACCESS_TOKEN = token_dict['access_token']
     REFRESH_TOKEN = token_dict['refresh_token']
 
     def updateToken(token):
-
-        download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
-        #Google Cloud Storageからtoken_gcp.txtをローカルのtoken.txtにダウンロードする
-
-        temp = tempfile.TemporaryDirectory()
-        #token.txtを上書きできるように、tempディレクトリを用意する
-        write_path = temp.name + '/token.txt'
-        f = open(write_path, 'w')
+        f = environ.get("TOKEN_TXT")
         f.write(str(token))
         f.close()
-        temp.cleanup()
         return
+
+    # def updateToken(token):
+        # download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
+        # #Google Cloud Storageからtoken_gcp.txtをローカルのtoken.txtにダウンロードする
+        # temp = tempfile.TemporaryDirectory()
+        # #token.txtを上書きできるように、tempディレクトリを用意する
+        # write_path = temp.name + '/token.txt'
+        # f = open(write_path, 'w')
+        # f.write(str(token))
+        # f.close()
+        # temp.cleanup()
+        # return
 
     # def updateToken(token):
     #     f = open(TOKEN_FILE, 'w')
@@ -163,7 +183,7 @@ def fitbit_data_byDayAndMinutes():
     # 認証済みクライアントの作成
     authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
 
-     # 時系列リストの生成
+    # 時系列リストの生成
     dates_list = build_date_list()
     minutes_list = build_minutes_list()  
 
@@ -171,7 +191,7 @@ def fitbit_data_byDayAndMinutes():
     ## データの取得
     days_result_dict = build_days_metrics_dict(authed_client,dates_list)
 
-     ## DataFrameに変換/day
+    ## DataFrameに変換/day
     days_clumns_name = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']    
     days_result_df = convert_dict_to_dataframe(days_result_dict,days_clumns_name,'date')
     print('--------日別の数値--------')
