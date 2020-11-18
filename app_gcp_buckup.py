@@ -1,47 +1,13 @@
-#【環境変数をセットする/cmd】 set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\svart\OneDrive\ドキュメント\BigMiniConf\fitbit\myFitbit_2\bigminiconf-nov2020-f59c478cf5b4.json
-
 # -*- coding: utf-8 -*-
+# fitbit autholization
 import fitbit
 from ast import literal_eval
 from datetime import datetime, timedelta, timezone
-import pandas #Big Query 
+import pandas 
 import json
-import tempfile #一時ファイルやディレクトリの作成
+# miku 
+import tempfile
 
-#googole cloud storage---------------------------->
-import google.cloud.storage as storage
-from os import environ
-from pprint import pprint 
-
-def test_bucket():
-    #print the bucket 
-    print("GOOGLE_APPLICATION_CREDENTIALS={}".format(environ.get("GOOGLE_APPLICATION_CREDENTIALS")))
-    client = storage.Client()
-
-    bucket_name = "fitbit_data_bydayandminutes"
-    blobs = client.list_blobs(bucket_name)
-    for blob in blobs:
-        print('-------->')
-        pprint(vars(blob))
-# test_bucket()
-
-BUCKET_name = "fitbit_data_bydayandminutes"
-SOURCE_blob_name = "token_gcp.txt"
-DESTIANATION_file_name = "token.txt"
-
-def download_blob(bucket_name, source_blob_name, destination_file_name):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(destination_file_name)
-
-    print(
-        "Blob {} downloaded to {}.".format(
-            source_blob_name, destination_file_name
-        )
-    )
-# download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
-#<----------------------------googole cloud storage
 
 # 直近7日間の日付リストを作成する
 def build_date_list():
@@ -73,6 +39,7 @@ def build_days_metrics_dict(authed_client,dates_list):
         # 該当日のActivity系の指標を取得
         activity_metrics = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']
         activity_response = authed_client.activities(date=date)
+        # print("activity_response",activity_response)
         for metrics_name in activity_metrics:
             try:
                 singleday_activity_metrics.append(activity_response['summary'][metrics_name])
@@ -80,6 +47,7 @@ def build_days_metrics_dict(authed_client,dates_list):
                 singleday_activity_metrics.append(0) 
 
         # 該当日の指標を辞書に格納
+        # print("singleday_activity_metrics",singleday_activity_metrics)
         days_result_dict[date] = singleday_activity_metrics
     return days_result_dict
 
@@ -111,6 +79,7 @@ def build_intraday_metrics_dict(authed_client,minutes_list):
         per_minute_result.append(calories_value)        
 
         intraday_minutes_result_dict[minute] = per_minute_result
+        # print("intraday_minutes_result_dict",intraday_minutes_result_dict)
 
     return intraday_minutes_result_dict
 
@@ -137,17 +106,12 @@ def fitbit_data_byDayAndMinutes():
     REFRESH_TOKEN = token_dict['refresh_token']
 
     def updateToken(token):
-
-        download_blob(BUCKET_name, SOURCE_blob_name, DESTIANATION_file_name)
-        #Google Cloud Storageからtoken_gcp.txtをローカルのtoken.txtにダウンロードする
-
+        # miku
         temp = tempfile.TemporaryDirectory()
-        #token.txtを上書きできるように、tempディレクトリを用意する
-        write_path = temp.name + '/token.txt'
+        write_path = temp.name + '/' + TOKEN_FILE
         f = open(write_path, 'w')
         f.write(str(token))
         f.close()
-        temp.cleanup()
         return
 
     # def updateToken(token):
@@ -162,6 +126,7 @@ def fitbit_data_byDayAndMinutes():
 
     # 認証済みクライアントの作成
     authed_client = fitbit.Fitbit(CLIENT_ID, CLIENT_SECRET, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN, refresh_cb=updateToken)
+    # authed_client = build_fitbit_authed_client(CLIENT_ID,CLIENT_SECRET,ACCESS_TOKEN,REFRESH_TOKEN)
 
      # 時系列リストの生成
     dates_list = build_date_list()
@@ -170,6 +135,7 @@ def fitbit_data_byDayAndMinutes():
     # 日別データの取得 -> DataFrameに変換
     ## データの取得
     days_result_dict = build_days_metrics_dict(authed_client,dates_list)
+    # print('days_result_dict',days_result_dict)
 
      ## DataFrameに変換/day
     days_clumns_name = ['caloriesOut','steps','lightlyActiveMinutes','veryActiveMinutes']    
@@ -194,8 +160,6 @@ def fitbit_data_byDayAndMinutes():
 
 
 # This code is necessary to invoke function in cloud function 
-# def get_fitbit_data_byDayAndMinutes(event,context):
-#     fitbit_data_byDayAndMinutes()
-
-fitbit_data_byDayAndMinutes()
-
+def get_fitbit_data_byDayAndMinutes(event,context):
+    fitbit_data_byDayAndMinutes()
+    # return f"OK"
