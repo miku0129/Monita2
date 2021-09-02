@@ -2,7 +2,7 @@
  
 With aging of population , more than one in four people is over 65 years old in Japan. <br>
 For senior citizens, decreased physical strength causes issues in their daily life.<br>
-I thought it would be nice if I had a device which allows me gently watching over my lovely mother.<br>
+I thought it would be nice if I had a device which allows us gently watching over them.<br>
 
 A Fitbit - wearable item is an option. 
 <br>It gives you a variety of data with frequent updates. Monitoring people's activity to support their healthy life.
