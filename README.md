@@ -1,22 +1,28 @@
-# Monita2 🚶👩‍🦽🧓
+## Monita2
  
-With aging of population , more than one in four people is over 65 years old in Japan. With changing family system, many people live alone. For senior citizens, decreased physical strength causes issues in their daily life. As a daughter of a mother who lives in remote area, it would be nice if I had a device which allows me gently watching over my lovely mother. A Fitbit - wearable item is an option. It gives you a variety of data with frequent updates. In this talk, I will show an application monitoring people's activity to support their life.
+With aging of population , more than one in four people is over 65 years old in Japan. <br>
+For senior citizens, decreased physical strength causes issues in their daily life.<br>
+I thought it would be nice if I had a device which allows me gently watching over my lovely mother.<br>
+
+A Fitbit - wearable item is an option. 
+<br>It gives you a variety of data with frequent updates. Monitoring people's activity to support their healthy life.
  
-# DEMO
+## Image
 
 <img src="https://i.ibb.co/CQ6Vwqm/my-Fitbit3.jpg" alt="my-Fitbit3" border="0">
  
-# Features
+## Features
  
-Monita2 is contacto to your fitbit API. Weekly summary shows the data of your steps and lightly/very activity in recent week. Steps/calories out by minutes is updated your data every 1 minute. Monita2 is updated automatically every 1 hour. 
+Monita2 track the data of your steps and lightly/very activity in recent week.<br>
+It's updated automatically every 1 hour. 
   
-# Tech stack
+## Tech
 FitbitApi
 Python3
 Google Cloud Platform : Cloud functions, BigQuery, Cloud Scheduler, pub/Sub
 Google data studio portal 
  
-# Author
+## About me 
  
 * Miku Sano
 * svartkatt39@gmail.com
